@@ -115,7 +115,8 @@ def gen_client_data(c2ws: np.ndarray, n_data: int, overlap_pool: list, overlap_r
     # Update overlap pool
     overlap_pool.extend(indices.tolist())
 
-    return indices
+    # Ensure indices are of integer type
+    return indices.astype(int)  # Convert indices to integer type
 
 if __name__=='__main__':
     import argparse
