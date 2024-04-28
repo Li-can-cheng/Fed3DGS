@@ -172,8 +172,18 @@ class COLMAPDatabase(sqlite3.Connection):
              prior_focal_length))
         return cursor.lastrowid
 
+    def image_exists(self, name):
+        # 检查数据库中是否存在该图像名
+        cursor = self.execute("SELECT EXISTS(SELECT 1 FROM images WHERE name=? LIMIT 1)", (name,))
+        return cursor.fetchone()[0]
+
     def add_image(self, name, camera_id,
                   prior_q=np.full(4, np.NaN), prior_t=np.full(3, np.NaN), image_id=None):
+        # 首先检查图像名是否已存在
+        if self.image_exists(name):
+            print(f"Image '{name}' already exists. Skipping insert.")
+            return None  # 返回 None 或其他适当的值来表明没有添加新记录
+
         cursor = self.execute(
             "INSERT INTO images VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (image_id, name, camera_id, prior_q[0], prior_q[1], prior_q[2],
