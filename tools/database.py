@@ -175,7 +175,9 @@ class COLMAPDatabase(sqlite3.Connection):
     def image_exists(self, name):
         # 检查数据库中是否存在该图像名
         cursor = self.execute("SELECT EXISTS(SELECT 1 FROM images WHERE name=? LIMIT 1)", (name,))
-        return cursor.fetchone()[0]
+        if(cursor.fetchone()[0]):
+            return True
+        return False
 
     def add_image(self, name, camera_id,
                   prior_q=np.full(4, np.NaN), prior_t=np.full(3, np.NaN), image_id=None):
