@@ -41,7 +41,7 @@ def visualize_scalars(scalar_tensor: torch.Tensor) -> np.ndarray:
     return cv2.cvtColor(cv2.applyColorMap(scalar_tensor, cv2.COLORMAP_INFERNO), cv2.COLOR_BGR2RGB)
 
 
-def evaluation(local_params,
+def evaluation(global_params,
                dataset_dir,
                val_image_lists,
                val_metadatas,
@@ -55,7 +55,7 @@ def evaluation(local_params,
     psnrs = []
     ssims = []
     lpipss = []
-    local_model = GaussianModel(sh_degree)
+    global_model = GaussianModel(sh_degree)
     logger.info('evaluate')
     for img_fname, meta in zip(val_image_lists, val_metadatas):
         # load data
@@ -70,7 +70,7 @@ def evaluation(local_params,
         fovy = focal2fov(fy, image_height)
         image_width //= resolution_scale
         image_height //= resolution_scale
-        local_model.set_params(local_params)
+        global_model.set_params(global_params)
         image_PIL = Image.open(os.path.join(dataset_dir, 'val/rgbs', img_fname))
         image_PIL = image_PIL.resize((image_width, image_height))
         image = torch.from_numpy(np.array(image_PIL)) / 255.0
@@ -79,11 +79,11 @@ def evaluation(local_params,
         app_vec = torch.nn.Parameter(torch.zeros(32).cuda())
         optimizer = optim.Adam([app_vec], lr=lr, eps=1e-12)
         with torch.no_grad():
-            pos_emb = local_model.pos_emb(local_params['xyz'].cuda())
+            pos_emb = global_model.pos_emb(global_params['xyz'].cuda())
         init_loss = None
         for _ in range(n_iter):
-            glo_sh = local_model.mlp(dict(pos=pos_emb, appearance=app_vec)).reshape(len(pos_emb), -1, 3)
-            rend_image = rendering(local_model, image_height, image_width, fovx, fovy, viewmat, bg_color, glo_sh)[0]
+            glo_sh = global_model.mlp(dict(pos=pos_emb, appearance=app_vec)).reshape(len(pos_emb), -1, 3)
+            rend_image = rendering(global_model, image_height, image_width, fovx, fovy, viewmat, bg_color, glo_sh)[0]
             ## remove right-side pixels
             loss = (rend_image[None, ..., :rend_image.shape[-1]//2] - image[None, ..., :image.shape[-1]//2]).square().mean()
             if init_loss is None:
@@ -95,10 +95,10 @@ def evaluation(local_params,
             logger.info(f'loss : {init_loss} -> {loss.item()}')
         # compute metrics
         with torch.no_grad():
-            glo_sh = local_model.mlp(dict(pos=pos_emb, appearance=app_vec)).reshape(len(pos_emb), -1, 3)
-            rend_image = rendering(local_model, image_height, image_width, fovx, fovy, viewmat, bg_color, glo_sh)[0]
+            glo_sh = global_model.mlp(dict(pos=pos_emb, appearance=app_vec)).reshape(len(pos_emb), -1, 3)
+            rend_image = rendering(global_model, image_height, image_width, fovx, fovy, viewmat, bg_color, glo_sh)[0]
             rendered_images.append(rend_image.cpu())
-            depth = rendering(local_model, image_height, image_width, fovx, fovy, viewmat, bg_color, depth=True)[0]
+            depth = rendering(global_model, image_height, image_width, fovx, fovy, viewmat, bg_color, depth=True)[0]
             depth = visualize_scalars(torch.log(depth + 1e-8).detach().cpu())
             rendered_depths.append(depth)
             ## remove left-side pixels
@@ -114,7 +114,7 @@ def evaluation(local_params,
     avg_psnr = torch.tensor(psnrs).mean().item()
     avg_ssim = torch.tensor(ssims).mean().item()
     avg_lpips = torch.tensor(lpipss).mean().item()
-    del local_model
+    del global_model
     torch.cuda.empty_cache()
     logger.info('---')
     logger.info(f'AVG. PSNR: {avg_psnr}')
@@ -129,8 +129,8 @@ if __name__=='__main__':
     ### directory args
     parser.add_argument('--output-dir', '-o', default='./', type=str,
                         help='/path/to/output-dir')
-    parser.add_argument('--local-params', '-l', required=True, type=str,
-                        help='/path/to/local-parameters')
+    parser.add_argument('--global-params', '-l', required=True, type=str,
+                        help='/path/to/global-parameters')
     parser.add_argument('--dataset-dir', '-data', required=True, type=str,
                         help='/path/to/dataset-dir')
     ### appearance args
@@ -155,32 +155,30 @@ if __name__=='__main__':
     f_handler.setFormatter(plain_formatter)
     f_handler.setLevel(logging.INFO)
     logger.addHandler(f_handler)
-    logger.info(f'load local model from {args.local_params}')
-    # if '.ply' in args.local_params:
-    #     tmp_model = GaussianModel(args.sh_degree)
-    #     tmp_model.load_ply(args.local_params)
-    #     local_params = get_model_params(tmp_model, True, device='cpu')
-    #     local_params = {'xyz': local_params[0],
-    #                      'rotation': local_params[1],
-    #                      'scaling': local_params[2],
-    #                      'opacity': local_params[3],
-    #                      'features_dc': local_params[4][:, :1],
-    #                      'features_rest': local_params[4][:, 1:],
-    #                      'app_mlp': tmp_model.mlp.state_dict(),
-    #                      'app_pos_emb': tmp_model.pos_emb.state_dict()}
-    #     del tmp_model
-    # else:
-    #     local_params= torch.load(args.local_params)
-    local_params = torch.load(args.local_params)
-    print(local_params)
-    logger.info(f'#Gaussians {len(local_params["xyz"])}')
+    logger.info(f'load local model from {args.global_params}')
+    if '.ply' in args.global_params:
+        tmp_model = GaussianModel(args.sh_degree)
+        tmp_model.load_ply(args.global_params)
+        global_params = get_model_params(tmp_model, True, device='cpu')
+        global_params = {'xyz': global_params[0],
+                         'rotation': global_params[1],
+                         'scaling': global_params[2],
+                         'opacity': global_params[3],
+                         'features_dc': global_params[4][:, :1],
+                         'features_rest': global_params[4][:, 1:],
+                         'app_mlp': tmp_model.mlp.state_dict(),
+                         'app_pos_emb': tmp_model.pos_emb.state_dict()}
+        del tmp_model
+    else:
+        global_params = torch.load(args.global_params)
+    logger.info(f'#Gaussians {len(global_params["xyz"])}')
     logger.info('load metadata')
     # set background color
     bg_color = torch.Tensor([1., 1., 1.]).cuda() if args.white_bg else torch.Tensor([0., 0.,0.]).cuda()
     # evaluation
     val_image_lists = sorted(os.listdir(os.path.join(args.dataset_dir, 'val/rgbs')))
     val_metadatas = [torch.load(os.path.join(args.dataset_dir, 'val/metadata', f.split('.')[0]+'.pt')) for f in val_image_lists]
-    images, depths, psnr, ssim, lpips = evaluation(local_params,
+    images, depths, psnr, ssim, lpips = evaluation(global_params,
                                                    args.dataset_dir,
                                                    val_image_lists,
                                                    val_metadatas,
