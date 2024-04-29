@@ -159,10 +159,10 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
-        if (my_cnt > 0):
-            save_rendered_images(image, iteration, args.model_path)
-            print("Saved rendered image for iteration", iteration, "to", args.model_path)
-            my_cnt -= 1
+        # if (my_cnt > 0):
+        #     save_rendered_images(image, iteration, args.model_path)
+        #     print("Saved rendered image for iteration", iteration, "to", args.model_path)
+        #     my_cnt -= 1
 
 
 def save_rendered_images(image_tensor, iteration, output_dir):
