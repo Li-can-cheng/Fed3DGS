@@ -16,6 +16,7 @@ from random import randint
 from PIL import Image
 
 import torch
+from torchvision.utils import save_image
 
 from tqdm import tqdm
 
@@ -151,6 +152,14 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
+    save_rendered_images(image, iteration, args.model_path)
+def save_rendered_images(image_tensor, iteration, output_dir):
+    """保存渲染的图像为PNG文件"""
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
+    # 保存图像文件
+    save_image(image_tensor, os.path.join(output_dir, f"rendered_image_{iteration}.png"))
+
 
 
 def prepare_output_and_logger(args):    
@@ -177,6 +186,7 @@ def prepare_output_and_logger(args):
 
 
 def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene : Scene, renderFunc, renderArgs):
+
     if tb_writer:
         tb_writer.add_scalar('train_loss_patches/l1_loss', Ll1.item(), iteration)
         tb_writer.add_scalar('train_loss_patches/total_loss', loss.item(), iteration)
