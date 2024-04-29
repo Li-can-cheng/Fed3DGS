@@ -156,22 +156,22 @@ if __name__=='__main__':
     f_handler.setLevel(logging.INFO)
     logger.addHandler(f_handler)
     logger.info(f'load local model from {args.local_params}')
-    print(args.local_params)
-    if '.ply' in args.local_params:
-        tmp_model = GaussianModel(args.sh_degree)
-        tmp_model.load_ply(args.local_params)
-        local_params = get_model_params(tmp_model, True, device='cpu')
-        local_params = {'xyz': local_params[0],
-                         'rotation': local_params[1],
-                         'scaling': local_params[2],
-                         'opacity': local_params[3],
-                         'features_dc': local_params[4][:, :1],
-                         'features_rest': local_params[4][:, 1:],
-                         'app_mlp': tmp_model.mlp.state_dict(),
-                         'app_pos_emb': tmp_model.pos_emb.state_dict()}
-        del tmp_model
-    else:
-        local_params= torch.load(args.local_params)
+    # if '.ply' in args.local_params:
+    #     tmp_model = GaussianModel(args.sh_degree)
+    #     tmp_model.load_ply(args.local_params)
+    #     local_params = get_model_params(tmp_model, True, device='cpu')
+    #     local_params = {'xyz': local_params[0],
+    #                      'rotation': local_params[1],
+    #                      'scaling': local_params[2],
+    #                      'opacity': local_params[3],
+    #                      'features_dc': local_params[4][:, :1],
+    #                      'features_rest': local_params[4][:, 1:],
+    #                      'app_mlp': tmp_model.mlp.state_dict(),
+    #                      'app_pos_emb': tmp_model.pos_emb.state_dict()}
+    #     del tmp_model
+    # else:
+    #     local_params= torch.load(args.local_params)
+    local_params = torch.load(args.local_params)
     logger.info(f'#Gaussians {len(local_params["xyz"])}')
     logger.info('load metadata')
     # set background color
