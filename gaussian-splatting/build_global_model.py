@@ -274,6 +274,7 @@ def main(args):
         metadatas[file_idx] = torch.load(os.path.join(metadata_dir, fname))
     # load image indices in clients data
     logger.info('load image lists')
+    os.mkdir(args.index_dir)
     index_files = sorted(os.listdir(args.index_dir))
     if args.shuffle:
         index_files = list(np.random.permutation(index_files))
