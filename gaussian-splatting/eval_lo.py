@@ -170,8 +170,9 @@ if __name__=='__main__':
                          'app_pos_emb': tmp_model.pos_emb.state_dict()}
         del tmp_model
     else:
-        local_params, iteration = torch.load(args.local_params)
-    logger.info(f'#Gaussians {len(local_params["xyz"])}')
+        loaded_data = torch.load(args.local_params)
+        model_params, iteration = loaded_data
+    logger.info(f'#Gaussians {len(model_params["xyz"])}')
     logger.info('load metadata')
     # set background color
     bg_color = torch.Tensor([1., 1., 1.]).cuda() if args.white_bg else torch.Tensor([0., 0.,0.]).cuda()
