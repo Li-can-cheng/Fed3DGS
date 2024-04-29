@@ -152,7 +152,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
-    save_rendered_images(image, iteration, args.model_path)
+        save_rendered_images(image, iteration, args.model_path)
+
 def save_rendered_images(image_tensor, iteration, output_dir):
     """保存渲染的图像为PNG文件"""
     # 确保输出目录存在
