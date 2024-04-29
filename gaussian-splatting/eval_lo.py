@@ -172,6 +172,7 @@ if __name__=='__main__':
     # else:
     #     local_params= torch.load(args.local_params)
     local_params = torch.load(args.local_params)
+    print(local_params)
     logger.info(f'#Gaussians {len(local_params["xyz"])}')
     logger.info('load metadata')
     # set background color
