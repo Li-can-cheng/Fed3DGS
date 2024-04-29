@@ -156,6 +156,7 @@ if __name__=='__main__':
     f_handler.setLevel(logging.INFO)
     logger.addHandler(f_handler)
     logger.info(f'load local model from {args.local_params}')
+    print(args.local_params)
     if '.ply' in args.local_params:
         tmp_model = GaussianModel(args.sh_degree)
         tmp_model.load_ply(args.local_params)
@@ -170,9 +171,8 @@ if __name__=='__main__':
                          'app_pos_emb': tmp_model.pos_emb.state_dict()}
         del tmp_model
     else:
-        loaded_data = torch.load(args.local_params)
-        model_params, iteration = loaded_data
-    logger.info(f'#Gaussians {len(model_params["xyz"])}')
+        local_params= torch.load(args.local_params)
+    logger.info(f'#Gaussians {len(local_params["xyz"])}')
     logger.info('load metadata')
     # set background color
     bg_color = torch.Tensor([1., 1., 1.]).cuda() if args.white_bg else torch.Tensor([0., 0.,0.]).cuda()
