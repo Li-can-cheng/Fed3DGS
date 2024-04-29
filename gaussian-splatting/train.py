@@ -38,6 +38,7 @@ except ImportError:
 def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoint_iterations, checkpoint, debug_from):
     my_cnt = 1
     model_params = None
+
     first_iter = 0
     tb_writer = prepare_output_and_logger(dataset)
     gaussians = GaussianModel(dataset.sh_degree)
@@ -161,8 +162,17 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
+                xyz_g, rot_g, scale_g, opacity_g, sh_g = get_model_params(gaussians, preact=True, device='cpu')
+                global_params = dict(xyz=xyz_g,
+                                     rotation=rot_g,
+                                     scaling=scale_g,
+                                     features_dc=sh_g[:, :1],
+                                     features_rest=sh_g[:, 1:],
+                                     opacity=opacity_g,
+                                     app_mlp=gaussians.mlp.state_dict(),
+                                     app_pos_emb=gaussians.pos_emb.state_dict())
                 # torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
-                torch.save(gaussians.capture(),scene.model_path + '/' + f'local_client{iteration}.pth')
+                torch.save(global_params,scene.model_path + '/' + f'local_client{iteration}.pth')
                 print(gaussians.capture())
 
         # if (my_cnt > 0):
@@ -200,7 +210,18 @@ def prepare_output_and_logger(args):
     # else:
     #     print("Tensorboard not available: not logging progress")
     return tb_writer
-
+def get_model_params(model, preact: bool=False, device='cuda'):
+    xyz = model.get_xyz.data.to(device)
+    rotation = model.get_rotation.to(device)
+    # get pre-activated params
+    if preact:
+        scale = model._scaling.data.to(device)
+        opacity = model._opacity.data.to(device)
+    else:
+        scale = model.get_scaling.to(device)
+        opacity = model.get_opacity.to(device)
+    rgb_feat = model.get_features.to(device)
+    return xyz, rotation, scale, opacity, rgb_feat
 
 def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, scene: Scene, renderFunc,
                     renderArgs):
