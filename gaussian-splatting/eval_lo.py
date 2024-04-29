@@ -171,6 +171,7 @@ if __name__=='__main__':
         del tmp_model
     else:
         global_params = torch.load(args.global_params)
+        print(global_params.keys())
     logger.info(f'#Gaussians {len(global_params["xyz"])}')
     logger.info('load metadata')
     # set background color
