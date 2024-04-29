@@ -275,7 +275,7 @@ def main(args):
     # load image indices in clients data
     logger.info('load image lists')
     # yuuki's work
-    os.mkdir(args.index_dir)
+    os.mkdir(args.index_dir, exist_ok=True)
     index_files = sorted(os.listdir(args.index_dir))
     if args.shuffle:
         index_files = list(np.random.permutation(index_files))
