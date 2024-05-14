@@ -285,6 +285,7 @@ def main(args):
                    for fname in index_files if '.txt' in fname]
     # load a 0-th local model as a global model
     logger.info('initialize global model')
+
     seed_model_index = index_files.pop(0).split('.')[0]
     load_iter = args.load_iteration
     seed_model_file = os.path.join(args.model_dir,

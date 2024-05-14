@@ -162,7 +162,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
             if (iteration in checkpoint_iterations):
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
-                xyz_g, rot_g, scale_g, opacity_g, sh_g = get_model_params(gaussians, preact=True, device='cpu')
+                xyz_g, rot_g, scale_g, opacity_g, sh_g, = get_model_params(gaussians, preact=True, device='cpu')
                 global_params = dict(xyz=xyz_g,
                                      rotation=rot_g,
                                      scaling=scale_g,
@@ -173,7 +173,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                                      app_pos_emb=gaussians.pos_emb.state_dict())
                 # torch.save((gaussians.capture(), iteration), scene.model_path + "/chkpnt" + str(iteration) + ".pth")
                 torch.save(global_params,scene.model_path + '/' + f'local_client{iteration}.pth')
-                print(gaussians.capture())
+                # print(gaussians.capture())
 
         # if (my_cnt > 0):
         #     save_rendered_images(image, iteration, args.model_path)
